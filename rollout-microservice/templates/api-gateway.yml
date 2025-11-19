@@ -1,0 +1,48 @@
+{{- $svc := .Values.microservices["api-gateway"] -}}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: {{ $svc.image }}
+        ports:
+        - containerPort: {{ $svc.port }}
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "{{ $.Values.global.otelEndpoint }}"
+        - name: OTEL_SERVICE_NAME
+          value: "api-gateway"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+    release: prometheus
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ $svc.port }}"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
+  type: ClusterIP
+

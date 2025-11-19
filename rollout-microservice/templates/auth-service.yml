@@ -1,0 +1,48 @@
+{{- $svc := .Values.microservices.auth-service -}}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: {{ $svc.image }}
+        ports:
+        - containerPort: {{ $svc.port }}
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "{{ $.Values.global.otelEndpoint }}"
+        - name: OTEL_SERVICE_NAME
+          value: "auth-service"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  labels:
+    app: auth-service
+    release: prometheus
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ $svc.port }}"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
+  type: ClusterIP
+

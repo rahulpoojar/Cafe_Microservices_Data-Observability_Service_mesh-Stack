@@ -1,0 +1,48 @@
+{{- $svc := .Values.microservices["cart-service"] -}}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+      - name: cart-service
+        image: {{ $svc.image }}
+        ports:
+        - containerPort: {{ $svc.port }}
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "{{ $.Values.global.otelEndpoint }}"
+        - name: OTEL_SERVICE_NAME
+          value: "cart-service"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+  labels:
+    app: cart-service
+    release: prometheus
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ $svc.port }}"
+    prometheus.io/path: "/metrics"
+spec:
+  selector:
+    app: cart-service
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
+  type: ClusterIP
+
