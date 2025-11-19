@@ -1,8 +1,8 @@
 {{- $svc := .Values.microservices["products-service"] -}}
 
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: products-service
 spec:
@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       app: products-service
+
   template:
     metadata:
       labels:
@@ -26,23 +27,39 @@ spec:
         - name: OTEL_SERVICE_NAME
           value: "products-service"
 
+  strategy:
+    canary:
+      stableService: products-service-stable
+      canaryService: products-service-canary
+      steps:
+      - setWeight: 20
+      - pause: { duration: 20s }
+      - setWeight: 60
+      - pause: { duration: 20s }
+      - setWeight: 100
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: products-service
-  labels:
-    app: products-service
-    release: prometheus
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ $svc.port }}"
-    prometheus.io/path: "/metrics"
+  name: products-service-stable
 spec:
   selector:
     app: products-service
+    rollouts-pod-template-hash: stable
   ports:
   - port: {{ $svc.port }}
     targetPort: {{ $svc.port }}
-  type: ClusterIP
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-service-canary
+spec:
+  selector:
+    app: products-service
+    rollouts-pod-template-hash: canary
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
