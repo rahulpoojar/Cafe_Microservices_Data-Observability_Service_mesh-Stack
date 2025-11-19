@@ -5,19 +5,23 @@ microservices:
   auth-service:
     image: "sreedocker123/cafemicroserviceauth:latest"
     port: 3000
+
   products-service:
     image: "sreedocker123/cafemicroserviceproducts:latest"
     port: 3001
+
   cart-service:
     image: "sreedocker123/cafemicroservicecart:latest"
     port: 3002
+
   orders-service:
     image: "sreedocker123/cafemicroserviceorders:latest"
     port: 3003
+
   api-gateway:
     image: "sreedocker123/cafemicroserviceapigateway:latest"
     port: 8000
+
   frontend:
     image: "sreedocker123/cafemicroservicefrontend:latest"
     port: 80
-
