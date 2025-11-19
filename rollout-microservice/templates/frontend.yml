@@ -1,8 +1,8 @@
 {{- $svc := .Values.microservices["frontend"] -}}
 
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: frontend
 spec:
@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       app: frontend
+
   template:
     metadata:
       labels:
@@ -20,17 +21,45 @@ spec:
         image: {{ $svc.image }}
         ports:
         - containerPort: {{ $svc.port }}
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "{{ $.Values.global.otelEndpoint }}"
+        - name: OTEL_SERVICE_NAME
+          value: "frontend"
+
+  strategy:
+    canary:
+      stableService: frontend-stable
+      canaryService: frontend-canary
+      steps:
+      - setWeight: 20
+      - pause: { duration: 20s }
+      - setWeight: 60
+      - pause: { duration: 20s }
+      - setWeight: 100
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: frontend-stable
 spec:
   selector:
     app: frontend
+    rollouts-pod-template-hash: stable
   ports:
   - port: {{ $svc.port }}
     targetPort: {{ $svc.port }}
-  type: ClusterIP
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-canary
+spec:
+  selector:
+    app: frontend
+    rollouts-pod-template-hash: canary
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
