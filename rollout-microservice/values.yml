@@ -1,27 +1,46 @@
+# global
 global:
-  otelEndpoint: "http://otel-collector:4318/v1/traces"
+  otelCollector: "http://otel-collector:4318/v1/traces"
+  imagePullPolicy: IfNotPresent
+  ingressHost: "172.16.51.60.nip.io"
 
-microservices:
-  auth-service:
-    image: "sreedocker123/cafemicroserviceauth:latest"
-    port: 3000
+# frontend (will be an Argo Rollout)
+frontend:
+  image: "sreedocker123/cafemicroservicefrontend:canary2"
+  replicas: 1
+  port: 80
 
-  products-service:
-    image: "sreedocker123/cafemicroserviceproducts:latest"
-    port: 3001
+# other services (normal Deployments)
+auth:
+  image: "sreedocker123/cafemicroserviceauth:latest"
+  replicas: 1
+  port: 3000
 
-  cart-service:
-    image: "sreedocker123/cafemicroservicecart:latest"
-    port: 3002
+products:
+  image: "sreedocker123/cafemicroserviceproducts:latest"
+  replicas: 1
+  port: 3001
 
-  orders-service:
-    image: "sreedocker123/cafemicroserviceorders:latest"
-    port: 3003
+cart:
+  image: "sreedocker123/cafemicroservicecart:latest"
+  replicas: 1
+  port: 3002
 
-  api-gateway:
-    image: "sreedocker123/cafemicroserviceapigateway:latest"
-    port: 8000
+orders:
+  image: "sreedocker123/cafemicroserviceorders:latest"
+  replicas: 1
+  port: 3003
 
-  frontend:
-    image: "sreedocker123/cafemicroservicefrontend:latest"
-    port: 80
+apiGateway:
+  image: "sreedocker123/cafemicroserviceapigateway:latest"
+  replicas: 1
+  port: 8000
+
+# rollout canary steps for frontend (weights + pauses)
+frontendRollout:
+  steps:
+    - weight: 20
+    - pauseSeconds: 30
+    - weight: 50
+    - pauseSeconds: 30
+    - weight: 100
