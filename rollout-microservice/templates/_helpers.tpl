@@ -1,4 +1,3 @@
-{{- define "svc.name" -}}
+{{- define "svc.fullname" -}}
 {{ .Chart.Name }}-{{ .name }}
 {{- end -}}
-
