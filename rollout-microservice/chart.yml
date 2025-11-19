@@ -1,6 +1,6 @@
 apiVersion: v2
-name: cafe-microservices
-description: Helm chart for Cafe Microservices with Argo Rollouts
+name: rollout-microservice
+description: Cafe microservices chart — frontend uses Argo Rollout (canary)
 type: application
-version: 0.2.0
+version: 0.1.0
 appVersion: "1.0"
