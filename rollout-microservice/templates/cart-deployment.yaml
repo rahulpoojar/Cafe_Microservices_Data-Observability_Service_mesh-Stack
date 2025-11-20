@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  labels:
+    app: cart-service
+spec:
+  replicas: {{ .Values.cart.replicas }}
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+        - name: cart-service
+          image: "{{ .Values.cart.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.cart.port }}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.global.otelCollector }}"
+            - name: OTEL_SERVICE_NAME
+              value: "cart-service"
