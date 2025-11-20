@@ -1,27 +1,43 @@
 {{- /*
-Safe Service template for products-service.
-This template never panics if .Values.products or .Values.products.port is missing.
-It uses inline if/default checks so the port falls back to 3001.
+Safe products Deployment template.
+Uses `if` blocks to avoid nil-pointer access to .Values.products.
+Provides defaults for image, replicas and port.
 */ -}}
 
-{{- $defaultPort := 3001 -}}
+{{- if .Values.products }}
+  {{- $image := default "sreedocker123/cafemicroserviceproducts:latest" .Values.products.image }}
+  {{- $replicas := default 1 .Values.products.replicas }}
+  {{- $port := default 3001 .Values.products.port }}
+{{- else }}
+  {{- $image := "sreedocker123/cafemicroserviceproducts:latest" -}}
+  {{- $replicas := 1 -}}
+  {{- $port := 3001 -}}
+{{- end }}
 
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: products-service
   labels:
     app: products-service
-    release: prometheus
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}"
-    prometheus.io/path: "/metrics"
 spec:
-  type: ClusterIP
+  replicas: {{ if .Values.products }}{{ default 1 .Values.products.replicas }}{{ else }}1{{ end }}
   selector:
-    app: products-service
-  ports:
-    - name: http
-      port: {{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}
-      targetPort: {{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}
+    matchLabels:
+      app: products-service
+  template:
+    metadata:
+      labels:
+        app: products-service
+    spec:
+      containers:
+        - name: products-service
+          image: {{ if .Values.products }}{{ default "sreedocker123/cafemicroserviceproducts:latest" .Values.products.image }}{{ else }}"sreedocker123/cafemicroserviceproducts:latest"{{ end }}
+          ports:
+            - containerPort: {{ if .Values.products }}{{ default 3001 .Values.products.port }}{{ else }}3001{{ end }}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ default "http://otel-collector:4318/v1/traces" .Values.global.otelCollector | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: "products-service"
+          # optional: add readiness/liveness probes if you want
