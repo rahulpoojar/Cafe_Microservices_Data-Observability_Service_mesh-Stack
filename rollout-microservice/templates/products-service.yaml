@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: products-service
+  labels:
+    app: products-service
+    release: prometheus
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.products.port }}"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: products-service
+  ports:
+    - name: http
+      port: {{ .Values.products.port }}
+      targetPort: {{ .Values.products.port }}
