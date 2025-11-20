@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        # rollouts-pod-template-hash will be added by the controller
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.global.otelCollector }}"
+            - name: OTEL_SERVICE_NAME
+              value: "frontend"
+
+  strategy:
+    canary:
+      # Use two services; Argo Rollouts can switch the service selectors for traffic routing.
+      stableService: frontend-stable
+      canaryService: frontend-canary
+      steps:
+{{- range $i, $s := .Values.frontendRollout.steps }}
+{{- if $s.weight }}
+        - setWeight: {{ $s.weight }}
+{{- else if $s.pauseSeconds }}
+        - pause:
+            duration: {{ $s.pauseSeconds }}s
+{{- end }}
+{{- end }}
