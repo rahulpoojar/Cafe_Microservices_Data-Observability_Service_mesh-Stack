@@ -1,10 +1,10 @@
 {{- /*
 Safe Service template for products-service.
-Uses index+default to avoid nil-pointer errors when .Values.products or .Values.products.port is missing.
+This template never panics if .Values.products or .Values.products.port is missing.
+It uses inline if/default checks so the port falls back to 3001.
 */ -}}
 
 {{- $defaultPort := 3001 -}}
-{{- $port := default $defaultPort (index .Values "products" "port") -}}
 
 apiVersion: v1
 kind: Service
@@ -15,7 +15,7 @@ metadata:
     release: prometheus
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "{{ $port }}"
+    prometheus.io/port: "{{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}"
     prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP
@@ -23,5 +23,5 @@ spec:
     app: products-service
   ports:
     - name: http
-      port: {{ $port }}
-      targetPort: {{ $port }}
+      port: {{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}
+      targetPort: {{ if .Values.products }}{{ default $defaultPort .Values.products.port }}{{ else }}{{ $defaultPort }}{{ end }}
