@@ -3,12 +3,12 @@ kind: Ingress
 metadata:
   name: cafe-ingress
   annotations:
-    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
-    - host: 172.16.51.60.nip.io
+    - host: {{ .Values.global.ingressHost }}
       http:
         paths:
           - path: /()(.*)
@@ -17,12 +17,11 @@ spec:
               service:
                 name: frontend-stable
                 port:
-                  number: 80
-
+                  number: {{ .Values.frontend.port }}
           - path: /api(/|$)(.*)
             pathType: Prefix
             backend:
               service:
-                name: api-gateway-stable
+                name: api-gateway
                 port:
-                  number: 8000
+                  number: {{ .Values.apiGateway.port }}
